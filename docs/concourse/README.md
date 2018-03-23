@@ -3,8 +3,41 @@
 This guide describes how to deploy [Concourse](http://concourse.ci/) on [Google Compute Engine](https://cloud.google.com/) using BOSH. You will deploy a BOSH director as part of these instructions.
 
 ## Prerequisites
-* You must have the `terraform` CLI installed on your workstation. See [Download Terraform](https://www.terraform.io/downloads.html) for more details.
-* You must have the `gcloud` CLI installed on your workstation. See [cloud.google.com/sdk](https://cloud.google.com/sdk/).
+* You must have the `terraform` CLI installed on your workstation. You can download and unzip [Terraform](https://www.terraform.io/downloads.html) to a directory of your chosing and then symlink the terraform executable to your `/usr/bin`. Or, if using a Mac, you can `brew install terraform` or `brew upgrade terraform` depending on whether or not you already have it installed.
+
+* You must have the `gcloud` CLI installed on your workstation. Download it from [cloud.google.com/sdk](https://cloud.google.com/sdk/) and then proceed as follows:
+
+````
+$ cd /work   # this is where I chose to place my the gcloud CLI software
+$ cp ~/Downloads/google-cloud-sdk-194.0.0-darwin-x86_64.tar.gz .
+````
+Unzip `google-cloud-sdk-194.0.0-darwin-x86_64.tar.gz` and proceed as follows:
+````
+$ cd /work/google-cloud-sdk/
+$ ./install.sh
+````
+
+Using a new Terminal window:
+
+````
+$ cd /work/google-cloud-sdk/
+$ ./bin/gcloud init
+````
+Let's check what do I have installed:
+````
+$ gcloud components list
+````
+Let's check what is my configuration:
+````
+$ gcloud config list
+[compute]
+region = us-east1
+zone = us-east1-b
+[core]
+account = rmeira@pivotal.io
+disable_usage_reporting = True
+project = fe-rmeira
+````
 
 ### Setup your workstation
 
@@ -13,25 +46,32 @@ This guide describes how to deploy [Concourse](http://concourse.ci/) on [Google 
   ```
   export projectid=REPLACE_WITH_YOUR_PROJECT_ID
   ```
+  
+   Which in my case is `export projectid=fe-rmeira; echo $projectid`
 
-1. Export your preferred compute region and zone:
+2. Export your preferred compute region and zone:
 
   ```
   export region=us-east1
-  export zone=us-east1-c
-  export zone2=us-east1-d
+  export zone=us-east1-b
+  export zone2=us-east1-c
   ```
 
-1. Configure `gcloud` with a user who is an owner of the project:
+3. Configure `gcloud` with a user who is an owner of the project:
 
   ```
   gcloud auth login
+  ```
+  The command above will open up a browser at `https://cloud.google.com/sdk/auth_success` to authenticate you.
+  
+  Proceed with:
+  ```
   gcloud config set project ${projectid}
   gcloud config set compute/zone ${zone}
   gcloud config set compute/region ${region}
   ```
-  
-1. Create a service account and key:
+   
+4. Create a service account and key:
 
   ```
   gcloud iam service-accounts create terraform-bosh
@@ -39,7 +79,7 @@ This guide describes how to deploy [Concourse](http://concourse.ci/) on [Google 
       --iam-account terraform-bosh@${projectid}.iam.gserviceaccount.com
   ```
 
-1. Grant the new service account editor access to your project:
+5. Grant the new service account editor access to your project:
 
   ```
   gcloud projects add-iam-policy-binding ${projectid} \
@@ -47,7 +87,7 @@ This guide describes how to deploy [Concourse](http://concourse.ci/) on [Google 
       --role roles/editor
   ```
 
-1. Make your service account's key available in an environment variable to be used by `terraform`:
+6. Make your service account's key available in an environment variable to be used by `terraform`:
 
   ```
   export GOOGLE_CREDENTIALS=$(cat /tmp/terraform-bosh.key.json)
@@ -57,7 +97,27 @@ This guide describes how to deploy [Concourse](http://concourse.ci/) on [Google 
 
 1. Download [main.tf](main.tf) and [concourse.tf](concourse.tf) from this repository.
 
-1. In a terminal from the same directory where the 2 `.tf` files are located, view the Terraform execution plan to see the resources that will be created:
+1. Edit `concourse.tf` and alter the first few lines to match the example shown below:
+```
+resource "google_compute_subnetwork" "concourse-public-subnet-1" {
+  name          = "concourse-public-${var.region}-1"
+  ip_cidr_range = "10.120.0.0/16"
+  network       = "${google_compute_network.network.self_link}"
+}
+
+resource "google_compute_subnetwork" "concourse-public-subnet-2" {
+  name          = "concourse-public-${var.region}-2"
+  ip_cidr_range = "10.121.0.0/16"
+  network       = "${google_compute_network.network.self_link}"
+}
+```
+
+1. In a terminal from the same directory where the 2 `.tf` files are located, execute `terraform init` and then view the Terraform execution plan to see the resources that will be created:
+
+  ```
+  $ terraform init
+  ```
+To view the execution plan:
 
   ```
   terraform plan -var projectid=${projectid} -var region=${region} -var zone-1=${zone} -var zone-2=${zone2}
@@ -91,7 +151,7 @@ This guide describes how to deploy [Concourse](http://concourse.ci/) on [Google 
 1. Explicitly set your secondary zone:
 
   ```
-  export zone2=us-east1-d
+  export zone2=us-east1-c
   ```
 
 1. Create a **password-less** SSH key:
@@ -341,17 +401,51 @@ Complete the following steps from your bastion instance.
 
 1. Download the [cloud-config.yml](cloud-config.yml) manifest file.
 
+- change it's contents per the example below:
+
+```
+networks:
+  - name: public
+    type: manual
+    subnets:
+    - az: z1
+      range: 10.150.0.0/24    <---- change to 10.120.0.0/24
+      gateway: 10.150.0.1     <---- change to 10.120.0.1
+      cloud_properties:
+        network_name: concourse
+        subnetwork_name: concourse-public-<%=region %>-1
+        ephemeral_external_ip: true
+        tags:
+          - concourse-public
+          - concourse-internal
+    - az: z2
+      range: 10.160.0.0/24    <---- change to 10.121.0.0/24
+      gateway: 10.160.0.1     <---- change to 10.121.0.1
+      cloud_properties:
+        network_name: concourse
+        subnetwork_name: concourse-public-<%=region %>-2
+        ephemeral_external_ip: true
+        tags:
+          - concourse-public
+          - concourse-internal
+```
+
 1. Download the [concourse.yml](concourse.yml) manifest file and set a few environment variables:
 
   ```
   export external_ip=`gcloud compute addresses describe concourse | grep ^address: | cut -f2 -d' '`
   export director_uuid=`bosh status --uuid 2>/dev/null`
   ```
+  
+  - Take note of the External_IP address. You will need it to connect to Concourse via the [Fly CLI](https://concourse-ci.org/fly-cli.html).
+  ```
+  echo $external_ip
+  ```
 
 1. Choose unique passwords for internal services and ATC and export them
    ```
-   export common_password=
-   export atc_password=
+   export common_password=<pick_one>
+   export atc_password=<pick_one>
    ```
 
 1. (Optional) Enable https support for concourse atc
@@ -375,3 +469,104 @@ Complete the following steps from your bastion instance.
   bosh deployment concourse.yml
   bosh deploy
   ```
+# Let's connect to Concourse and try it out  
+  
+- As per tradition, there is a simple [Hello, world!](https://concourse-ci.org/hello-world.html) tutorial for you to try. This will at least show the basics of [fly](https://concourse-ci.org/fly-cli.html) (the CLI for Concourse).
+
+- Check whether you already have `fly` installed. If you don't, click [here](https://concourse-ci.org/fly-cli.html) to install `fly`.
+
+```
+$ fly -v
+3.5.0
+```
+
+- Connect to Concourse
+
+```
+$ fly -t concourse-rfm login -c http://35.197.133.183
+logging in to team 'main'
+
+WARNING: 
+    fly version (3.5.0) is out of sync with the target (2.5.0). to sync up, run the following:
+    fly -t concourse-rfm sync
+
+username: concourse
+password: password
+
+target saved
+
+$ fly -t concourse-rfm sync
+downloading fly from http://35.197.133.183... 
+ 12.60 MB / 12.60 MB [===================================================================================================] 100.00% 11s
+successfully updated from 3.5.0 to 2.5.0
+
+$ fly -t concourse-rfm login -c http://35.197.133.183
+username: concourse
+password: password
+
+target saved
+```
+
+- Let's Execute _Hello World_
+
+```
+cd /work/concourse   # This is a directory I created
+vi hello.yml
+```
+
+###### _hello.yml_
+```
+jobs:
+- name: hello-world
+  plan:
+  - task: say-hello
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: ubuntu}
+      run:
+        path: echo
+        args: ["Hello, world!"]
+```
+
+Follow the steps shown below:
+
+```
+$ fly -t concourse-rfm set-pipeline -p hello-world -c hello.yml
+jobs:
+  job hello-world has been added:
+    name: hello-world
+    plan:
+    - task: say-hello
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: ubuntu
+        run:
+          path: echo
+          args:
+          - Hello, world!
+          dir: ""
+    
+apply configuration? [yN]: y
+pipeline created!
+you can view your pipeline here: http://35.197.133.183/teams/main/pipelines/hello-world
+
+the pipeline is currently paused. to unpause, either:
+  - run the unpause-pipeline command
+  - click play next to the pipeline in the web ui
+```
+
+Ley's proceed:
+
+```
+Ralph-Meira-MacBook-pro-9:concourse rmeira$ fly -t concourse-rfm unpause-pipeline -p hello-world
+unpaused 'hello-world'
+
+Ralph-Meira-MacBook-pro-9:concourse rmeira$ fly -t concourse-rfm unpause-job -j hello-world/hello-world
+unpaused 'hello-world'
+```
+
