@@ -526,4 +526,9 @@ $ fly -t concourse-rfm unpause-job -j hello-world/hello-world
 unpaused 'hello-world'
 ```
 
+6. Final Step:
+```
+Goto: http://35.197.133.183/teams/main/pipelines/hello-world
+```
+
 # Congratulations: You have deployed Concourse on GCP
