@@ -21,12 +21,23 @@ secrets.
   * GCP DNS API [here](https://console.cloud.google.com/apis/api/dns)
   * GCP Cloud Resource Manager API [here](https://console.cloud.google.com/apis/api/cloudresourcemanager.googleapis.com/overview)
   * GCP Storage Interopability [here](https://console.cloud.google.com/storage/settings)
+  
+  ![](./Enable_Storage_Interoperability.jpg)
 
-2. Create a bucket in Google Cloud Storage to hold the Terraform state file, enabling versioning for this bucket via:
+2. Create a bucket in Google Cloud Storage to hold the Terraform state file, **enabling versioning** for this bucket via:
   * the `gsutil` CLI: `gcloud auth activate-service-account --key-file credentials.json && gsutil versioning set on gs://<your-bucket>`
   * If you already have a service account and sufficient permissions, you can run `gcloud auth login` and `gsutil versioning set on gs://<your-bucket>`
+  
+  So I did this...
+  
+   ![](./pcf20_bucket.jpg)
+  
+  ```
+  $ gsutil versioning set on gs://pcf20installationviaconcoursepipeline
+Enabling versioning for gs://pcf20installationviaconcoursepipeline/...
+  ```
 
-3. Change all of the CHANGEME values in params.yml with real values. For the gcp_service_account_key, create a new service account key that has the following IAM roles. (See the Troubleshooting issue below to ensure you have indented this parameter correctly):
+3. Change all of the CHANGEME values in [params.yml](./params.yml) with real values. For the gcp_service_account_key, create a new service account key that has the following IAM roles. (See the Troubleshooting issue below to ensure you have indented this parameter correctly):
   * Cloud SQL Admin
   * Compute Instance Admin (v1)
   * Compute Network Admin
