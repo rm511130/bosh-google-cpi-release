@@ -386,36 +386,7 @@ Complete the following steps from your bastion instance.
 
 3. Download the [cloud-config.yml](cloud-config.yml) manifest file.
 
-- change it's contents per the example below:
-
-```
-networks:
-  - name: public
-    type: manual
-    subnets:
-    - az: z1
-      range: 10.150.0.0/24    <---- change to 10.120.0.0/24
-      gateway: 10.150.0.1     <---- change to 10.120.0.1
-      cloud_properties:
-        network_name: concourse
-        subnetwork_name: concourse-public-<%=region %>-1
-        ephemeral_external_ip: true
-        tags:
-          - concourse-public
-          - concourse-internal
-    - az: z2
-      range: 10.160.0.0/24    <---- change to 10.121.0.0/24
-      gateway: 10.160.0.1     <---- change to 10.121.0.1
-      cloud_properties:
-        network_name: concourse
-        subnetwork_name: concourse-public-<%=region %>-2
-        ephemeral_external_ip: true
-        tags:
-          - concourse-public
-          - concourse-internal
-```
-
-1. Download the [concourse.yml](concourse.yml) manifest file and set a few environment variables:
+4. Download the [concourse.yml](concourse.yml) manifest file and set a few environment variables:
 
   ```
   export external_ip=`gcloud compute addresses describe concourse | grep ^address: | cut -f2 -d' '`
@@ -427,13 +398,13 @@ networks:
   echo $external_ip
   ```
 
-1. Choose unique passwords for internal services and ATC and export them
+5. Choose unique passwords for internal services and ATC and export them
    ```
    export common_password=<pick_one>
    export atc_password=<pick_one>
    ```
 
-1. (Optional) Enable https support for concourse atc
+6. (Optional) Enable https support for concourse atc
 
   In `concourse.yml` under the atc properties block fill in the following fields:
   ```
@@ -442,13 +413,13 @@ networks:
   tls_key: << SSL Private Key >>
   ```
 
-1. Upload the cloud config:
+7. Upload the cloud config:
 
   ```
   bosh update cloud-config cloud-config.yml
   ```
 
-1. Target the deployment file and deploy:
+8. Target the deployment file and deploy:
 
   ```
   bosh deployment concourse.yml
@@ -456,7 +427,7 @@ networks:
   ```
 # Let's connect to Concourse and try it out  
   
-- As per tradition, there is a simple [Hello, world!](https://concourse-ci.org/hello-world.html) tutorial for you to try. This will at least show the basics of [fly](https://concourse-ci.org/fly-cli.html) (the CLI for Concourse).
+1. As per tradition, there is a simple [Hello, world!](https://concourse-ci.org/hello-world.html) tutorial for you to try. This will at least show the basics of [fly](https://concourse-ci.org/fly-cli.html) (the CLI for Concourse).
 
 - Check whether you already have `fly` installed. If you don't, click [here](https://concourse-ci.org/fly-cli.html) to install `fly`.
 
@@ -465,7 +436,7 @@ $ fly -v
 3.5.0
 ```
 
-- Connect to Concourse
+2. Connect to Concourse
 
 ```
 $ fly -t concourse-rfm login -c http://35.197.133.183
@@ -492,7 +463,7 @@ password: password
 target saved
 ```
 
-- Let's Execute _Hello World_
+3. Let's Execute _Hello World_
 
 ```
 cd /work/concourse   # This is a directory I created
@@ -515,7 +486,7 @@ jobs:
         args: ["Hello, world!"]
 ```
 
-Follow the steps shown below:
+4. Follow the steps shown below:
 
 ```
 $ fly -t concourse-rfm set-pipeline -p hello-world -c hello.yml
@@ -545,7 +516,7 @@ the pipeline is currently paused. to unpause, either:
   - click play next to the pipeline in the web ui
 ```
 
-Ley's proceed:
+5. Let's proceed:
 
 ```
 $ fly -t concourse-rfm unpause-pipeline -p hello-world
@@ -555,3 +526,4 @@ $ fly -t concourse-rfm unpause-job -j hello-world/hello-world
 unpaused 'hello-world'
 ```
 
+# Congratulations: You have deployed Concourse on GCP
