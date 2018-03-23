@@ -97,22 +97,7 @@ project = fe-rmeira
 
 1. Download [main.tf](main.tf) and [concourse.tf](concourse.tf) from this repository.
 
-1. Edit `concourse.tf` and alter the first few lines to match the example shown below:
-```
-resource "google_compute_subnetwork" "concourse-public-subnet-1" {
-  name          = "concourse-public-${var.region}-1"
-  ip_cidr_range = "10.120.0.0/16"
-  network       = "${google_compute_network.network.self_link}"
-}
-
-resource "google_compute_subnetwork" "concourse-public-subnet-2" {
-  name          = "concourse-public-${var.region}-2"
-  ip_cidr_range = "10.121.0.0/16"
-  network       = "${google_compute_network.network.self_link}"
-}
-```
-
-1. In a terminal from the same directory where the 2 `.tf` files are located, execute `terraform init` and then view the Terraform execution plan to see the resources that will be created:
+2. In a terminal from the same directory where the two `.tf` files are located, execute `terraform init` and then view the Terraform execution plan to see the resources that will be created:
 
   ```
   $ terraform init
@@ -123,7 +108,7 @@ To view the execution plan:
   terraform plan -var projectid=${projectid} -var region=${region} -var zone-1=${zone} -var zone-2=${zone2}
   ```
 
-1. Create the resources:
+3. Create the resources:
 
   ```
   terraform apply -var projectid=${projectid} -var region=${region} -var zone-1=${zone} -var zone-2=${zone2}
@@ -137,7 +122,7 @@ To view the execution plan:
   gcloud compute ssh bosh-bastion-concourse
   ```
 
-1. Configure `gcloud` to use the correct zone, region, and project:
+2. Configure `gcloud` to use the correct zone, region, and project:
 
   ```
   zone=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/zone)
@@ -148,45 +133,45 @@ To view the execution plan:
   export project_id=`curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/project/project-id`
   ```
 
-1. Explicitly set your secondary zone:
+3. Explicitly set your secondary zone:
 
   ```
   export zone2=us-east1-c
   ```
 
-1. Create a **password-less** SSH key:
+4. Create a **password-less** SSH key:
 
   ```
   ssh-keygen -t rsa -f ~/.ssh/bosh -C bosh
   ```
 
-1. Run this `export` command to set the full path of the SSH private key you created earlier:
+5. Run this `export` command to set the full path of the SSH private key you created earlier:
 
   ```
   export ssh_key_path=$HOME/.ssh/bosh
   ```
 
-1. Navigate to your [project's web console](https://console.cloud.google.com/compute/metadata/sshKeys) and add the new SSH public key by pasting the contents of ~/.ssh/bosh.pub:
+5. Navigate to your [project's web console](https://console.cloud.google.com/compute/metadata/sshKeys) and add the new SSH public key by pasting the contents of ~/.ssh/bosh.pub:
 
   ![](../img/add-ssh.png)
 
   > **Important:** The username field should auto-populate the value `bosh` after you paste the public key. If it does not, be sure there are no newlines or carriage returns being pasted; the value you paste should be a single line.
 
 
-1. Confirm that `bosh-init` is installed by querying its version:
+6. Confirm that `bosh-init` is installed by querying its version:
 
   ```
   bosh-init -v
   ```
 
-1. Create and `cd` to a directory:
+7. Create and `cd` to a directory:
 
   ```
   mkdir google-bosh-director
   cd google-bosh-director
   ```
 
-1. Use `vim` or `nano` to create a BOSH Director deployment manifest named `manifest.yml.erb`:
+8. Use `vim` or `vi` or `nano` to create a BOSH Director deployment manifest named `manifest.yml.erb`:
 
   ```
   ---
@@ -364,18 +349,18 @@ To view the execution plan:
       ntp: *ntp
   ```
 
-1. Fill in the template values of the manifest with your environment variables:
+9. Fill in the template values of the manifest with your environment variables:
   ```
   erb manifest.yml.erb > manifest.yml
   ```
 
-1. Deploy the new manifest to create a BOSH Director:
+10. Deploy the new manifest to create a BOSH Director:
 
   ```
   bosh-init deploy manifest.yml
   ```
 
-1. Target your BOSH environment:
+11. Target your BOSH environment:
 
   ```
   bosh target 10.0.0.6
@@ -392,14 +377,14 @@ Complete the following steps from your bastion instance.
   bosh upload stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent?v=3263.8
   ```
 
-1. Upload the required [BOSH Releases](http://bosh.io/docs/release.html):
+2. Upload the required [BOSH Releases](http://bosh.io/docs/release.html):
 
   ```
   bosh upload release https://bosh.io/d/github.com/concourse/concourse?v=2.5.0
   bosh upload release https://bosh.io/d/github.com/cloudfoundry/garden-runc-release?v=1.0.3
   ```
 
-1. Download the [cloud-config.yml](cloud-config.yml) manifest file.
+3. Download the [cloud-config.yml](cloud-config.yml) manifest file.
 
 - change it's contents per the example below:
 
