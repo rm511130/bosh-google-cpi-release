@@ -1,6 +1,6 @@
 # Deploying Concourse on Google Compute Engine
 
-This guide describes how to deploy [Concourse](http://concourse.ci/) on [Google Compute Engine](https://cloud.google.com/) using BOSH. You will deploy a BOSH director as part of these instructions.
+This guide describes how to deploy [Concourse](http://concourse.ci/) on [Google Compute Engine](https://cloud.google.com/) using BOSH. You will deploy a BOSH director v1.x as part of these instructions. This Bosh Director is to be dedicated to the Concourse installation and should not be used for a PCF deployment. You'll need BOSH v2.x to install PCF.
 
 ## Prerequisites
 * You must have the `terraform` CLI installed on your workstation. You can download and unzip [Terraform](https://www.terraform.io/downloads.html) to a directory of your chosing and then symlink the terraform executable to your `/usr/bin`. Or, if using a Mac, you can `brew install terraform` or `brew upgrade terraform` depending on whether or not you already have it installed.
