@@ -563,10 +563,10 @@ the pipeline is currently paused. to unpause, either:
 Ley's proceed:
 
 ```
-Ralph-Meira-MacBook-pro-9:concourse rmeira$ fly -t concourse-rfm unpause-pipeline -p hello-world
+$ fly -t concourse-rfm unpause-pipeline -p hello-world
 unpaused 'hello-world'
 
-Ralph-Meira-MacBook-pro-9:concourse rmeira$ fly -t concourse-rfm unpause-job -j hello-world/hello-world
+$ fly -t concourse-rfm unpause-job -j hello-world/hello-world
 unpaused 'hello-world'
 ```
 
