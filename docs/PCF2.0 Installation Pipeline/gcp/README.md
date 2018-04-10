@@ -1,5 +1,8 @@
 # PCF on GCP
 
+Assuming all the steps under https://github.com/rm511130/bosh-google-cpi-release/tree/master/docs/concourse have been executed 
+and that you have Concourse CI/CD up and running.
+
 ![Concourse Pipeline](embed.png)
 
 This pipeline uses Terraform to create all the infrastructure required to run a
@@ -49,9 +52,24 @@ Enabling versioning for gs://pcf20installationviaconcoursepipeline/...
   ```
   fly -t lite set-pipeline -p deploy-pcf -c pipeline.yml -l params.yml
   ```
+  _in my case, I used:_
+  ```
+  fly -t concourse-rfm set-pipeline -p deploy-pcf -c pipeline.yml -l params.yml
+  ```
 
 5. Unpause the pipeline
+
+_in my case I used:_
+```
+fly -t concourse-rfm unpause-pipeline -p deploy-pcf
+```
+
 6. Run `bootstrap-terraform-state` job manually. This will prepare the s3 resource that holds the terraform state. This only needs to be run once.
+_in my case I used:_
+```
+fly -t concourse-rfm unpause-job -j deploy-pcf/bootstrap-terraform-state
+```
+
 7. `upload-opsman-image` will automatically upload the latest matching version of Operations Manager
 8. Trigger the `create-infrastructure` job. `create-infrastructure` will output at the end the DNS settings that you must configure before continuing.
 9. Once DNS is set up you can run `configure-director`. From there the pipeline should automatically run through to the end.
